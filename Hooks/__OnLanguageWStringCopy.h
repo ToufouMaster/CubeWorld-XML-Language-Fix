@@ -37,17 +37,19 @@ void LoadLanguageXMLFile(cube::GameController* gc, std::string* string) {
 std::wostream* __fastcall LanguageWStringCopy(std::wostream* stream) {//cube::OptionsWidget* widget) {
     auto gc = cube::GetGameController();
     int id = gc->OptionsWidget->language_id % file_names.size();
+    std::string* str = &file_names.at(id);
 
     if (id != last_id) {
-        LoadLanguageXMLFile(gc, &file_names.at(id));
+        LoadLanguageXMLFile(gc, str);
         last_id = id;
     }
     //stream->write(std::to_wstring(id).c_str(), std::to_wstring(id).size());
-    std::wstring wstr = std::wstring(file_names.at(id).begin(), file_names.at(id).end());
+    std::wstring wstr = std::wstring(str->begin(), str->end());
     stream->write(wstr.c_str(), wstr.size());
     return stream;
 }
 
+/*
 void __declspec(naked) ASMOnLanguageWStringCopy() {
     __asm {
         PUSH_ALL
@@ -64,6 +66,7 @@ void __declspec(naked) ASMOnLanguageWStringCopy() {
         jmp[ASMOnLanguageWStringCopy_jmpback];
     }
 }
+*/
 
 static int callback(void* NotUsed, int argc, char** argv, char** azColName) {
     for (int i = 0; i < argc; i++) {
@@ -86,8 +89,6 @@ void SetupOnLanguageWStringCopy() {
     }
 
     auto gc = cube::BusywaitForGameController();
-    int id = gc->option_language % file_names.size();
-    last_id = id;
 
     auto base = cube_funcs::instance()->ImageBase;
     WriteBYTE((void*)(base + 0xD369D), 0x90);
@@ -108,6 +109,8 @@ void SetupOnLanguageWStringCopy() {
     WriteCALL((void*)(base + 0xD36A9), (void*)&LanguageWStringCopy);
     WriteBYTE((void*)(base + 0xD36AE), 0x90);
 
+    int id = gc->option_language % file_names.size();
+    last_id = id;
     LoadLanguageXMLFile(gc, &file_names.at(id));
 
     ASMOnLanguageWStringCopy_jmpback = (void*)(base + 0xD36AF);
